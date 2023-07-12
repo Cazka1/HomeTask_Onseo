@@ -1,0 +1,132 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.diffplug.spotless:spotless-plugin-gradle:6.17.0")
+    }
+}
+
+plugins {
+    id 'java'
+    id 'eclipse'
+    id 'idea'
+    id 'com.diffplug.spotless' version '6.17.0'
+}
+
+apply plugin: 'com.diffplug.spotless'
+//apply plugin: 'net.serenity-bdd.aggregator'
+
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    avroVersion = "1.11.0"
+    serenityVersion = "3.6.21"
+    lombokVersion = "1.18.24"
+    springVersion = "3.0.5"
+    cucumberVersion = "7.11.0"
+}
+
+subprojects {
+    apply plugin: 'java'
+
+}
+
+allprojects {
+    ext {
+        avroVersion = "1.11.0"
+        serenityVersion = "3.6.21"
+        lombokVersion = "1.18.24"
+        springVersion = "3.0.5"
+        cucumberVersion = "7.11.0"
+    }
+
+    dependencies {
+        annotationProcessor("org.projectlombok:lombok:${lombokVersion}")
+        testAnnotationProcessor("org.projectlombok:lombok:${lombokVersion}")
+        implementation("org.projectlombok:lombok:${lombokVersion}")
+        testImplementation("org.projectlombok:lombok:${lombokVersion}")
+
+        implementation('ch.qos.logback:logback-classic:1.2.10')
+        implementation("org.apache.avro:avro:${avroVersion}")
+
+        implementation("net.serenity-bdd:serenity-core:${serenityVersion}")
+        implementation("net.serenity-bdd:serenity-junit:${serenityVersion}")
+        implementation("net.serenity-bdd:serenity-rest-assured:${serenityVersion}")
+        implementation("net.serenity-bdd:serenity-cucumber:${serenityVersion}")
+        implementation("net.serenity-bdd:serenity-spring:${serenityVersion}")
+
+        implementation("org.springframework.boot:spring-boot-starter-test:${springVersion}") {
+            exclude group: "junit", module: "junit"
+            exclude(group: "org.junit.jupiter", module: "junit-jupiter-engine")
+            exclude(group: "org.junit.vintage", module: "junit-vintage-engine")
+        }
+        implementation("org.springframework.boot:spring-boot-starter-json:${springVersion}")
+        implementation('org.springframework:spring-test:${springVersion}')
+
+        implementation('org.assertj:assertj-core:3.22.0')
+        implementation('org.awaitility:awaitility:4.1.1')
+        implementation('com.github.invictum:serenity-reportportal-integration:1.5.8')
+        implementation('com.epam.reportportal:client-java:4.0.19')
+        implementation('org.apache.tika:tika-parsers:1.11')
+    }
+
+}
+dependencies {
+    testImplementation 'io.qameta.allure:allure-junit5:2.22.2'
+    testImplementation group: 'io.qameta.allure', name: 'allure-junit5', version: '2.22.2'
+    testImplementation group: 'io.qameta.allure', name: 'allure-assertj', version: '2.22.2'
+    testImplementation 'io.qameta.allure:allure-java-commons:2.22.2'
+}
+
+java {
+    // OPTIONAL: Use Java 17 toolchain, adjust according to your needs or remove entirely
+    // see https://docs.gradle.org/current/userguide/toolchains.html
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+        vendor.set(JvmVendorSpec.ADOPTIUM)
+    }
+    // OPTIONAL: Force compile classpath versions for all dependencies, remove if undesired
+    // see https://docs.gradle.org/current/userguide/resolution_strategy_tuning.html#resolution_consistency
+    consistentResolution {
+        useCompileClasspathVersions()
+    }
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags("disabled")
+        // OPTIONAL: Include only specified tags using JUnit5 tag expressions
+//        if (project.hasProperty("includeTags")) includeTags(project.property("includeTags") as String ?)
+    }
+    // OPTIONAL: Ignore test failures so that build pipelines won't get blocked by failing examples/scenarios
+    ignoreFailures = true
+    // OPTIONAL: Copy all system properties from the command line (-D...) to the test environment
+    systemProperties(project.gradle.startParameter.systemPropertiesArgs)
+    // OPTIONAL: Enable parallel test execution
+    systemProperty("cucumber.execution.parallel.enabled", true)
+    // OPTIONAL: Set parallel execution strategy (defaults to dynamic)
+    systemProperty("cucumber.execution.parallel.config.strategy", "fixed")
+    // OPTIONAL: Set the fixed number of parallel test executions. Only works for the "fixed" strategy defined above
+    systemProperty("cucumber.execution.parallel.config.fixed.parallelism", 4)
+    // OPTIONAL: Enable Cucumber plugins, enable/disable as desired
+    systemProperty("cucumber.plugin", "message:build/reports/cucumber.ndjson, timeline:build/reports/timeline, html:build/reports/cucumber.html")
+    // OPTIONAL: Improve readability of test names in reports
+    systemProperty("cucumber.junit-platform.naming-strategy", "long")
+    // OPTIONAL: Don't show Cucumber ads
+    systemProperty("cucumber.publish.quiet", "true")
+    // OPTIONAL: Force test execution even if they are up-to-date according to Gradle or use "gradle test --rerun"
+    outputs.upToDateWhen { false }
+}
+
+spotless {
+    java {
+        googleJavaFormat()
+        removeUnusedImports()
+    }
+}
+

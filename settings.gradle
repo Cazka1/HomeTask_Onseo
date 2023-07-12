@@ -1,0 +1,5 @@
+rootProject.name = 'ssp-test'
+include 'tests'
+include 'api'
+include 'web'
+include 'core'
